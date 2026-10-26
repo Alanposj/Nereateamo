@@ -203,8 +203,10 @@ document.getElementById("enablePush").addEventListener("click", async () => {
         result.error || "No se pudo registrar el celular. Revisá la función push-subscribe."
       );
     }
-
-    status.textContent = "Avisos activados";
+setTimeout(() => {
+  const card = button.closest('.card');
+  if (card) card.remove();
+}, 1500);
 button.disabled = true;
 
 setTimeout(() => {
