@@ -92,7 +92,16 @@ document.getElementById("capsula").appendChild(pushCard);
 document.getElementById("enablePush").addEventListener("click", async () => {
   const button = document.getElementById("enablePush");
   const status = document.getElementById("pushStatus");
-  const code = document.getElementById("pushPairCode").value;
+  const inviteCode = new URLSearchParams(
+  location.hash.slice(1)
+).get("vincular");
+
+const code = inviteCode ||
+  document.getElementById("pushPairCode").value;
+
+if (inviteCode) {
+  document.getElementById("pushPairCode").parentElement.style.display = "none";
+}
 
   if (!code) {
     status.textContent = "Ingresá el código de vinculación.";
