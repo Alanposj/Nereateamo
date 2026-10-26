@@ -208,7 +208,7 @@ document.getElementById("enablePush").addEventListener("click", async () => {
 button.disabled = true;
 
 setTimeout(() => {
-  button.closest('.card')?.remove();
+  button.parentElement.parentElement.remove();
 }, 1500);
   } catch (error) {
     status.textContent =
