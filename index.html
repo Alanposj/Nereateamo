@@ -62,10 +62,11 @@ const SUPABASE_KEY = "sb_publishable_1hkn38bSFXKKZXFtulAC0A_qZubSQ_Y";
 const greetings = ["Hola mi amor.","Hola meme.","Hola beia.","Hola mamor","holi pioja","hola priciosa","jelou linda"];
 document.getElementById('greeting').textContent = greetings[Math.floor(Math.random()*greetings.length)];
 
+
 function show(id){
   const actual = document.querySelector('.section.active')?.id;
   if(actual && actual !== id){
-    history.pushState({section:id}, '', '#' + id);
+    history.pushState({section:id}, '', location.pathname + location.search + '#seccion=' + id);
   }
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
@@ -73,7 +74,8 @@ function show(id){
 }
 
 window.addEventListener('popstate',()=>{
-  const id = location.hash.slice(1) || 'home';
+  const hash = location.hash.slice(1);
+  const id = hash.startsWith('seccion=') ? hash.slice(8) : 'home';
   const section = document.getElementById(id);
   if(section){
     document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
@@ -81,6 +83,7 @@ window.addEventListener('popstate',()=>{
     window.scrollTo({top:0,behavior:'smooth'});
   }
 });
+
 
 function configured(){return SUPABASE_URL.startsWith('https://')&&SUPABASE_URL.endsWith('.supabase.co')&&SUPABASE_KEY.startsWith('sb_publishable_');}
 async function request(path,options={}){if(!configured())throw Error('Falta poner la URL y la clave pública de Supabase en el código.');const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...options,headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'return=minimal',...(options.headers||{})}});if(!r.ok){let t='';try{t=await r.text()}catch(e){}throw Error(`Supabase respondió ${r.status}. Revisá tabla y permisos. ${t.slice(0,160)}`);}return r;}
