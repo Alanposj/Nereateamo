@@ -61,6 +61,7 @@ document.getElementById('capsuleForm').addEventListener('submit',async e=>{e.pre
 document.getElementById('loadCapsules').addEventListener('click',async()=>{const b=document.getElementById('loadCapsules'),list=document.getElementById('capsuleList'),s=document.getElementById('readStatus');b.disabled=true;list.textContent='';s.textContent='Buscando cartas...';try{if(!configured())throw Error('Primero falta poner la URL y la clave pública de Supabase.');const r=await fetch(`${SUPABASE_URL}/rest/v1/rpc/mensajes_disponibles`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error(`Supabase respondió ${r.status}. Revisá la función mensajes_disponibles y el permiso anon.`);const rows=await r.json();if(!rows.length)list.textContent='Todavía no hay cartas disponibles. Volvé cuando llegue la fecha elegida. ♡';else rows.forEach(row=>{const a=document.createElement('div');a.style.cssText='padding:14px 0;border-bottom:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere';const date=document.createElement('div');date.className='small';date.style.marginBottom='8px';date.textContent='Para leer desde: '+(row['leer desde']||'');const m=document.createElement('div');m.textContent=row.mensaje||'';a.append(date,m);list.appendChild(a);});s.textContent='';}catch(err){s.textContent=err.message;}finally{b.disabled=false;}});
 document.getElementById('songForm').addEventListener('submit',async e=>{e.preventDefault();const b=document.getElementById('songButton'),s=document.getElementById('songStatus'),song=document.getElementById('songName').value.trim();if(!song){s.textContent='Escribí el nombre de una canción.';return;}b.disabled=true;s.textContent='Mandando tu canción...';try{await request('sugerencias_canciones',{method:'POST',body:JSON.stringify({cancion:song})});s.textContent='¡Listo! Me llegó tu sugerencia. ♡';document.getElementById('songName').value='';}catch(err){s.textContent='Todavía no se pudo enviar. '+err.message;}finally{b.disabled=false;}});
 
+
 const VAPID_PUBLIC_KEY = "BIvtQ0HrQTaj0mn0fiZM4e7uyUATPu9-LwwuOU_2LFk1iQM0jeNIOyrcC0HMI0k-p569BXAehQzFmlh1wZsLJac";
 
 function vapidBytes(key) {
@@ -76,8 +77,8 @@ const pushCard = document.createElement("div");
 pushCard.className = "card";
 pushCard.innerHTML = `
   <h2>Avisos de las cartas 💌</h2>
-  <p>Si querés, podés recibir un aviso cuando una carta esté disponible.</p>
-  <label class="field">
+  <p>Activá los avisos para enterarte cuando haya una carta disponible.</p>
+  <label class="field" id="pushCodeField">
     <span>Código de vinculación</span>
     <input id="pushPairCode" type="password"
       autocomplete="off" placeholder="Ingresá tu código">
@@ -87,29 +88,38 @@ pushCard.innerHTML = `
   </button>
   <p id="pushStatus" class="status" role="status"></p>
 `;
+
 document.getElementById("capsula").appendChild(pushCard);
+
+// Leer el código del enlace al cargar la página.
+const inviteCode = new URLSearchParams(
+  window.location.hash.slice(1)
+).get("vincular");
+
+// Si llegó mediante el enlace especial, ocultar el campo enseguida.
+if (inviteCode) {
+  document.getElementById("pushCodeField").style.display = "none";
+}
 
 document.getElementById("enablePush").addEventListener("click", async () => {
   const button = document.getElementById("enablePush");
   const status = document.getElementById("pushStatus");
-  const inviteCode = new URLSearchParams(
-  location.hash.slice(1)
-).get("vincular");
-
-const code = inviteCode ||
-  document.getElementById("pushPairCode").value;
-
-if (inviteCode) {
-  document.getElementById("pushPairCode").parentElement.style.display = "none";
-}
+  const typedCode = document.getElementById("pushPairCode").value.trim();
+  const code = inviteCode || typedCode;
 
   if (!code) {
-    status.textContent = "Ingresá el código de vinculación.";
+    status.textContent = "Falta el código de vinculación.";
     return;
   }
 
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-    status.textContent = "Este navegador no admite estas notificaciones.";
+    status.textContent =
+      "Este navegador no admite las notificaciones web. Probá con Chrome.";
+    return;
+  }
+
+  if (!("Notification" in window)) {
+    status.textContent = "Este navegador no admite notificaciones.";
     return;
   }
 
@@ -118,11 +128,16 @@ if (inviteCode) {
 
   try {
     const permission = await Notification.requestPermission();
+
     if (permission !== "granted") {
-      throw new Error("Necesitás permitir las notificaciones en el navegador.");
+      throw new Error(
+        "Tenés que permitir las notificaciones en el navegador."
+      );
     }
 
-    const registration = await navigator.serviceWorker.register("./sw.js");
+    const registration =
+      await navigator.serviceWorker.register("./sw.js");
+
     await navigator.serviceWorker.ready;
 
     let subscription = await registration.pushManager.getSubscription();
@@ -143,22 +158,29 @@ if (inviteCode) {
           "apikey": SUPABASE_KEY
         },
         body: JSON.stringify({
-          code,
+          code: code,
           endpoint: subscription.endpoint,
           subscription: subscription.toJSON()
         })
       }
     );
 
+    const result = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      throw new Error("No se pudo registrar el celular. Revisá el código.");
+      throw new Error(
+        result.error || "No se pudo registrar el celular. Revisá la función push-subscribe."
+      );
     }
 
-    status.textContent = "¡Este celular quedó registrado para los avisos! ♡";
+    status.textContent =
+      "¡Este celular quedó registrado para los avisos! ♡";
   } catch (error) {
-    status.textContent = error.message || "No se pudo activar.";
+    status.textContent =
+      error.message || "No se pudieron activar los avisos.";
   } finally {
     button.disabled = false;
   }
 });
+
 </script></body></html>
