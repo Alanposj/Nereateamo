@@ -204,8 +204,12 @@ document.getElementById("enablePush").addEventListener("click", async () => {
       );
     }
 
-    status.textContent =
-      "¡Este celular quedó registrado para los avisos! ♡";
+    status.textContent = "Avisos activados";
+button.disabled = true;
+
+setTimeout(() => {
+  button.closest('.card')?.remove();
+}, 1500);
   } catch (error) {
     status.textContent =
       error.message || "No se pudieron activar los avisos.";
