@@ -53,7 +53,7 @@ h1{font-size:clamp(2.2rem,7vw,4.2rem);line-height:1.04;letter-spacing:-.05em;mar
 Me acuerdo de que te vi caminando y, mientras más me acercaba, más se me aceleraba el corazón. Estaba tan nervioso que lo único que me salía hacer era tirarte pasto, porque me daba vergüenza hasta agarrarte la mano. Yo estaba muriendo por un beso tuyo y, desde que nos sentamos, estaba armándome de valor para por fin darte ese bisito que tanto quería, hasta que por fin me animé y te lo di. No fue el mejor beso ni el más tierno, pero cuando nuestros labios se tocaron sentí una mezcla de tantas emociones... Sentí tanta satisfacción que, después de ese bisito, me sentía un nene todo embobado y feliz. Ese día supe que sí eras el amor de mi vida, porque, más que una simple juntada, fue un avance enorme para romper el hielo y seguir conociéndonos y juntándonos muchísimo más.</div></div><div class="card"><h2>Algo que amo de vos</h2><div class="note">La verdad amo absolutamente todo de vos, amo lo increible persona que sos. Sos una persona tan completa y buena que si tengo que ennumerar las razones por las que te amo, la verdad es que se me hace eterno. Amo muchisimo como sos en general, lo inteligente que sos, la onda que le pones a la escuela incluso odiandola, amo tu super fisico tan hermoso que tenes, amo que ames tanto a los animales y como educas al haaland es tan lindo.
 
 Era algo que amo de vos y dije varias razones, pero bueno es que es imposible decir solo una cosa cuando tenes razones ilimitadas para ser amada</div></div></section>
-<section id="capsula" class="section"><button class="back" onclick="show('home')">← Volver al inicio</button><h1>Cartas para el futuro</h1><p>En esta parte nos podemos mandar lo que queramos, eligiendo una fecha para poder leer el mensaje... al otro le va a llegar una notificación avisándole que hay una carta programada (estaba medio aburrido, así que decidí agregar esto, es totalmente opcional).</p><div class="card"><form id="capsuleForm"><label class="field"><span>Tu mensaje</span><textarea id="capsuleMessage" maxlength="2000" required placeholder="Escribí acá lo que quieras decir..."></textarea></label><label class="field"><span>¿Cuándo querés poder leerlo?</span><input id="capsuleDate" type="date" required></label><button class="btn" id="capsuleButton">Guardar mi carta</button><p id="capsuleStatus" class="status" role="status"></p></form></div><div class="card"><h2>Cartas que ya se pueden abrir</h2><p>Cuando llegue la fecha elegida, las cartas disponibles se pueden leer acá.</p><button class="btn" id="loadCapsules" type="button">Ver cartas disponibles</button><div id="capsuleList" class="note"></div><p id="readStatus" class="status" role="status"></p></div></section>
+<section id="capsula" class="section"><button class="back" onclick="show('home')">← Volver al inicio</button><h1>Cartas para el futuro</h1><p>En esta parte nos podemos mandar lo que queramos, eligiendo una fecha para poder leer el mensaje... al otro le va a llegar una notificación avisándole que hay una carta programada (estaba medio aburrido, así que decidí agregar esto, es totalmente opcional).</p><div class="card" id="deviceLinkCard"><h2>Vincular este celular</h2><p id="deviceLinkInfo">Vinculá este dispositivo una sola vez para poder enviar cartas.</p><form id="deviceLinkForm"><label class="field"><span>Código de vinculación</span><input id="devicePairCode" type="password" autocomplete="off" maxlength="200" required placeholder="Ingresá tu código secreto"></label><button class="btn" id="deviceLinkButton">Vincular celular</button><p id="deviceLinkStatus" class="status" role="status"></p></form></div><div class="card"><form id="capsuleForm"><label class="field"><span>Tu mensaje</span><textarea id="capsuleMessage" maxlength="2000" required placeholder="Escribí acá lo que quieras decir..."></textarea></label><label class="field"><span>¿Cuándo querés poder leerlo?</span><input id="capsuleDate" type="date" required></label><button class="btn" id="capsuleButton">Guardar mi carta</button><p id="capsuleStatus" class="status" role="status"></p></form></div><div class="card"><h2>Cartas que ya se pueden abrir</h2><p>Cuando llegue la fecha elegida, las cartas disponibles se pueden leer acá.</p><button class="btn" id="loadCapsules" type="button">Ver cartas disponibles</button><div id="capsuleList" class="note"></div><p id="readStatus" class="status" role="status"></p></div></section>
 <section id="cancion" class="section"><button class="back" onclick="show('home')">← Volver al inicio</button><h1>Pedime una canción</h1><p>Hola, mi amor, en esta parte me podés recomendar cualquier canción que creas que le falte a la playlist (no se me ocurrieron más canciones entonces que mejor que preguntarle a mi novia), es totalmente opcional.</p><div class="card"><form id="songForm"><label class="field"><span>Nombre de la canción</span><input id="songName" maxlength="120" required placeholder="Escribí el nombre de la canción"></label><button class="btn" id="songButton">Mandar canción</button><p id="songStatus" class="status" role="status"></p></form></div></section>
 </main><div class="footer">Hecho para vos. ♡</div></div>
 <script>
@@ -87,142 +87,18 @@ window.addEventListener('popstate',()=>{
 
 function configured(){return SUPABASE_URL.startsWith('https://')&&SUPABASE_URL.endsWith('.supabase.co')&&SUPABASE_KEY.startsWith('sb_publishable_');}
 async function request(path,options={}){if(!configured())throw Error('Falta poner la URL y la clave pública de Supabase en el código.');const r=await fetch(`${SUPABASE_URL}/rest/v1/${path}`,{...options,headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',Prefer:'return=minimal',...(options.headers||{})}});if(!r.ok){let t='';try{t=await r.text()}catch(e){}throw Error(`Supabase respondió ${r.status}. Revisá tabla y permisos. ${t.slice(0,160)}`);}return r;}
+const DEVICE_TOKEN_KEY='un_lugar_para_vos_device_token_v1';
+function getDeviceToken(){try{return localStorage.getItem(DEVICE_TOKEN_KEY)||'';}catch(e){return '';}}
+function updateDeviceLinkUI(){const linked=!!getDeviceToken(),form=document.getElementById('deviceLinkForm'),info=document.getElementById('deviceLinkInfo');if(linked){form.style.display='none';info.textContent='Este celular ya está vinculado y puede enviar cartas.';}else{form.style.display='block';info.textContent='Vinculá este dispositivo una sola vez para poder enviar cartas.';}}
+async function callEdgeFunction(name,body,extraHeaders={}){if(!configured())throw Error('Falta configurar Supabase.');const r=await fetch(`${SUPABASE_URL}/functions/v1/${name}`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json',...extraHeaders},body:JSON.stringify(body)});let data={};try{data=await r.json();}catch(e){}if(!r.ok)throw Error(data.error||`La función respondió ${r.status}.`);return data;}
+document.getElementById('deviceLinkForm').addEventListener('submit',async e=>{e.preventDefault();const b=document.getElementById('deviceLinkButton'),s=document.getElementById('deviceLinkStatus'),code=document.getElementById('devicePairCode').value.trim();if(!code){s.textContent='Ingresá tu código de vinculación.';return;}b.disabled=true;s.textContent='Vinculando este celular...';try{const result=await callEdgeFunction('vincular_dispositivo',{code});if(!result.success||!result.token)throw Error('La función no devolvió un token válido.');localStorage.setItem(DEVICE_TOKEN_KEY,result.token);document.getElementById('devicePairCode').value='';s.textContent='Celular vinculado correctamente. ♡';updateDeviceLinkUI();}catch(err){s.textContent=err.message;}finally{b.disabled=false;}});
+updateDeviceLinkUI();
 const d=new Date(),today=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);document.getElementById('capsuleDate').min=today;
-document.getElementById('capsuleForm').addEventListener('submit',async e=>{e.preventDefault();const b=document.getElementById('capsuleButton'),s=document.getElementById('capsuleStatus'),message=document.getElementById('capsuleMessage').value.trim(),date=document.getElementById('capsuleDate').value;if(!message){s.textContent='Escribí un mensaje antes de guardarlo.';return;}if(date<today){s.textContent='Elegí hoy o una fecha futura.';return;}b.disabled=true;s.textContent='Guardando tu carta...';try{await request('mensajes',{method:'POST',body:JSON.stringify({mensaje:message,'leer desde':date})});s.textContent='Tu carta quedó guardada. Va a aparecer cuando llegue la fecha elegida. ♡';document.getElementById('capsuleMessage').value='';document.getElementById('capsuleDate').value='';}catch(err){s.textContent=err.message;}finally{b.disabled=false;}});
+document.getElementById('capsuleForm').addEventListener('submit',async e=>{e.preventDefault();const b=document.getElementById('capsuleButton'),s=document.getElementById('capsuleStatus'),message=document.getElementById('capsuleMessage').value.trim(),date=document.getElementById('capsuleDate').value;if(!message){s.textContent='Escribí un mensaje antes de guardarlo.';return;}if(date<today){s.textContent='Elegí hoy o una fecha futura.';return;}const token=getDeviceToken();if(!token){s.textContent='Primero tenés que vincular este celular.';return;}b.disabled=true;s.textContent='Guardando tu carta...';try{await callEdgeFunction('crear_mensaje-',{mensaje:message,'leer desde':date},{'x-device-token':token});s.textContent='Tu carta quedó guardada. Va a aparecer cuando llegue la fecha elegida. ♡';document.getElementById('capsuleMessage').value='';document.getElementById('capsuleDate').value='';}catch(err){s.textContent=err.message;}finally{b.disabled=false;}});
 document.getElementById('loadCapsules').addEventListener('click',async()=>{const b=document.getElementById('loadCapsules'),list=document.getElementById('capsuleList'),s=document.getElementById('readStatus');b.disabled=true;list.textContent='';s.textContent='Buscando cartas...';try{if(!configured())throw Error('Primero falta poner la URL y la clave pública de Supabase.');const r=await fetch(`${SUPABASE_URL}/rest/v1/rpc/mensajes_disponibles`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},body:'{}'});if(!r.ok)throw Error(`Supabase respondió ${r.status}. Revisá la función mensajes_disponibles y el permiso anon.`);const rows=await r.json();if(!rows.length)list.textContent='Todavía no hay cartas disponibles. Volvé cuando llegue la fecha elegida. ♡';else rows.forEach(row=>{const a=document.createElement('div');a.style.cssText='padding:14px 0;border-bottom:1px solid var(--line);white-space:pre-wrap;overflow-wrap:anywhere';const date=document.createElement('div');date.className='small';date.style.marginBottom='8px';date.textContent='Para leer desde: '+(row['leer desde']||'');const m=document.createElement('div');m.textContent=row.mensaje||'';a.append(date,m);list.appendChild(a);});s.textContent='';}catch(err){s.textContent=err.message;}finally{b.disabled=false;}});
 document.getElementById('songForm').addEventListener('submit',async e=>{e.preventDefault();const b=document.getElementById('songButton'),s=document.getElementById('songStatus'),song=document.getElementById('songName').value.trim();if(!song){s.textContent='Escribí el nombre de una canción.';return;}b.disabled=true;s.textContent='Mandando tu canción...';try{await request('sugerencias_canciones',{method:'POST',body:JSON.stringify({cancion:song})});s.textContent='¡Listo! Me llegó tu sugerencia. ♡';document.getElementById('songName').value='';}catch(err){s.textContent='Todavía no se pudo enviar. '+err.message;}finally{b.disabled=false;}});
 
 
-const VAPID_PUBLIC_KEY = "BIvtQ0HrQTaj0mn0fiZM4e7uyUATPu9-LwwuOU_2LFk1iQM0jeNIOyrcC0HMI0k-p569BXAehQzFmlh1wZsLJac";
 
-function vapidBytes(key) {
-  const padding = "=".repeat((4 - key.length % 4) % 4);
-  const base64 = (key + padding)
-    .replace(/-/g, "+")
-    .replace(/_/g, "/");
-  const raw = atob(base64);
-  return Uint8Array.from(raw, c => c.charCodeAt(0));
-}
-
-const pushCard = document.createElement("div");
-pushCard.className = "card";
-pushCard.innerHTML = `
-  <h2>Avisos de las cartas 💌</h2>
-  <p>Activá los avisos para enterarte cuando haya una carta disponible.</p>
-  <label class="field" id="pushCodeField">
-    <span>Código de vinculación</span>
-    <input id="pushPairCode" type="password"
-      autocomplete="off" placeholder="Ingresá tu código">
-  </label>
-  <button class="btn" id="enablePush" type="button">
-    Activar avisos en este celular
-  </button>
-  <p id="pushStatus" class="status" role="status"></p>
-`;
-
-document.getElementById("capsula").appendChild(pushCard);
-
-// Leer el código del enlace al cargar la página.
-const inviteCode = new URLSearchParams(
-  window.location.hash.slice(1)
-).get("vincular");
-
-// Si llegó mediante el enlace especial, ocultar el campo enseguida.
-if (inviteCode) {
-  document.getElementById("pushCodeField").style.display = "none";
-}
-
-document.getElementById("enablePush").addEventListener("click", async () => {
-  const button = document.getElementById("enablePush");
-  const status = document.getElementById("pushStatus");
-  const typedCode = document.getElementById("pushPairCode").value.trim();
-  const code = inviteCode || typedCode;
-
-  if (!code) {
-    status.textContent = "Falta el código de vinculación.";
-    return;
-  }
-
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-    status.textContent =
-      "Este navegador no admite las notificaciones web. Probá con Chrome.";
-    return;
-  }
-
-  if (!("Notification" in window)) {
-    status.textContent = "Este navegador no admite notificaciones.";
-    return;
-  }
-
-  button.disabled = true;
-  status.textContent = "Activando los avisos...";
-
-  try {
-    const permission = await Notification.requestPermission();
-
-    if (permission !== "granted") {
-      throw new Error(
-        "Tenés que permitir las notificaciones en el navegador."
-      );
-    }
-
-    const registration =
-      await navigator.serviceWorker.register("./sw.js");
-
-    await navigator.serviceWorker.ready;
-
-    let subscription = await registration.pushManager.getSubscription();
-
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: vapidBytes(VAPID_PUBLIC_KEY)
-      });
-    }
-
-    const response = await fetch(
-      `${SUPABASE_URL}/functions/v1/push-subscribe`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_KEY
-        },
-        body: JSON.stringify({
-          code: code,
-          endpoint: subscription.endpoint,
-          subscription: subscription.toJSON()
-        })
-      }
-    );
-
-    const result = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(
-        result.error || "No se pudo registrar el celular. Revisá la función push-subscribe."
-      );
-    }
-
-status.textContent = "Avisos activados";
-button.disabled = true;
-
-setTimeout(() => {
-  const card = button.closest('.card');
-  if (card) card.remove();
-}, 1500);
-
-button.disabled = true;
-
-setTimeout(() => {
-  button.parentElement.parentElement.remove();
-}, 1500);
-  } catch (error) {
-    status.textContent =
-      error.message || "No se pudieron activar los avisos.";
-  } finally {
-    button.disabled = false;
-  }
-});
 
 </script></body></html>
