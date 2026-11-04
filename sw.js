@@ -1,33 +1,28 @@
-self.addEventListener("push", (event) => {
-  let data = {
-    title: "Una cartita para vos 💌",
-    body: "Ya podés abrir tu cartita. ❤️",
-    url: self.registration.scope
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; }
+  catch (_) { data = { body: event.data ? event.data.text() : '' }; }
+  const title = data.title || 'Una cartita para vos 💌';
+  const options = {
+    body: data.body || 'Tenés una carta de tu amor. Entrá para verla.',
+    data: { url: data.url || 'https://alanposj.github.io/Nereateamo/' }
   };
-
-  if (event.data) {
-    try {
-      data = { ...data, ...event.data.json() };
-    } catch {
-      data.body = event.data.text();
-    }
-  }
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      data: { url: data.url },
-      tag: "carta-disponible"
-    })
-  );
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
-self.addEventListener("notificationclick", (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close();
-
-  event.waitUntil(
-    clients.openWindow(
-      event.notification.data?.url || self.registration.scope
-    )
-  );
+  const target = event.notification.data && event.notification.data.url
+    ? event.notification.data.url
+    : 'https://alanposj.github.io/Nereateamo/';
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      if ('focus' in client) {
+        await client.navigate(target);
+        return client.focus();
+      }
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(target);
+  })());
 });
