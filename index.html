@@ -127,10 +127,8 @@ async function activatePush(){
   });
   let data={};try{data=await response.json();}catch(e){}
   if(!response.ok || !data.success) throw Error(data.error||`No se pudo registrar la suscripción (${response.status}).`);
-  info.textContent='Este celular ya está preparado para recibir notificaciones.';
-  setPushStatus('¡Listo! Las notificaciones quedaron activadas en este celular. ♡');
-  button.textContent='Notificaciones activadas';
-  button.disabled=true;
+  // La suscripción quedó registrada: ocultamos toda la tarjeta.
+  document.getElementById('pushCard').style.display='none';
 }
 document.getElementById('enablePushButton').addEventListener('click',async()=>{
   const button=document.getElementById('enablePushButton');
@@ -138,11 +136,29 @@ document.getElementById('enablePushButton').addEventListener('click',async()=>{
   try{await activatePush();}
   catch(error){setPushStatus(error.message);button.disabled=false;}
 });
+// Al volver a entrar, verificamos la suscripción existente en Supabase.
+// Si sigue registrada, ocultamos la tarjeta sin volver a pedir permiso.
 if(getDeviceToken() && 'serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistration('/Nereateamo/').then(reg=>{
-    if(reg && reg.pushManager) return reg.pushManager.getSubscription();
-  }).then(sub=>{
-    if(sub){document.getElementById('pushInfo').textContent='Este navegador ya tiene una suscripción Push. Tocá el botón para verificarla.';}
+  navigator.serviceWorker.getRegistration('/Nereateamo/').then(async reg=>{
+    if(!reg || !reg.pushManager) return;
+    const sub=await reg.pushManager.getSubscription();
+    if(!sub) return;
+
+    const response=await fetch(`${SUPABASE_URL}/functions/v1/push-subscribe`,{
+      method:'POST',
+      headers:{
+        apikey:SUPABASE_KEY,
+        Authorization:`Bearer ${SUPABASE_KEY}`,
+        'Content-Type':'application/json',
+        'x-device-token':getDeviceToken()
+      },
+      body:JSON.stringify({endpoint:sub.endpoint,subscription:sub.toJSON()})
+    });
+    let data={};
+    try{data=await response.json();}catch(e){}
+    if(response.ok && data.success){
+      document.getElementById('pushCard').style.display='none';
+    }
   }).catch(()=>{});
 }
 const d=new Date(),today=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);document.getElementById('capsuleDate').min=today;
